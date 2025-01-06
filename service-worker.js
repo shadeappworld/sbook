@@ -13,6 +13,7 @@ self.addEventListener('install', (event) => {
             return cache.addAll(FILES_TO_CACHE);
         })
     );
+    self.skipWaiting();
 });
 
 // Activate the service worker and clean up old caches
@@ -40,3 +41,21 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+// Periodic background sync to trigger notifications
+self.addEventListener('periodicsync', (event) => {
+    if (event.tag === 'daily-task-reminder') {
+        event.waitUntil(showDailyReminder());
+    }
+});
+
+// Function to show a daily reminder
+async function showDailyReminder() {
+    const title = 'Shade Book Reminder';
+    const options = {
+        body: 'Don’t forget to check your tasks and notes today!',
+        icon: '/yuh.jpg',
+        badge: '/yuh.jpg'
+    };
+    self.registration.showNotification(title, options);
+}
