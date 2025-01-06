@@ -73,7 +73,17 @@
   You can also ask Shade AI questions related to your notes and tasks and it'll give you personalized answers.
     </p>
   </div>
-
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+        .then((registration) => {
+            console.log('Service Worker registered:', registration);
+        })
+        .catch((error) => {
+            console.log('Service Worker registration failed:', error);
+        });
+}
+</script>
   <script src="script.js"></script>
 </body>
 </html>
