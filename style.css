@@ -348,13 +348,17 @@ body.hide-header .header {
 
 .container {
   width: 100%;
-  max-width: 600px;
-  background-color: #fff;
+  /* max-width: 600px; */
+  /* background-color: #fff; */
   padding: 20px;
   border-radius: 50px;
   background: var(--secondary-color);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   color: var(--text-color);
+  position: sticky;
+  /* left: 15%; */
+  MARGIN: 0px;
+  POSITION: sticky;
 }
 
 h1, h2 {
@@ -372,14 +376,14 @@ textarea, input[type="text"] {
 }
 
 button {
-  width: 50px;
+  width: 84px;
   padding: 10px;
-  position: absolute;
-  border-radius: 5px;
+  position: sticky;
+  border-radius: 13px;
   background-color: #5cb85c;
   color: white;
   border: none;
-  font-size: 2px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -475,7 +479,7 @@ li {
   max-width: 90%; /* Ensures the popup is responsive */
   background-color: rgba(0, 0, 0, 0.5); /* Dark background */
   z-index: 1000;
-  padding: 20px;
+  padding: 2px;
   border-radius: 8px;
 }
 
@@ -490,7 +494,7 @@ li {
 /* Close button */
 .close-btn {
   position: absolute;
-  top: 10px;
+  top: 2px;
   right: 10px;
   font-size: 24px;
   cursor: pointer;
@@ -529,6 +533,7 @@ li {
   width: 100%;
   padding: 8px;
   margin-bottom: 10px;
+  color: white;
 }
 
 .task-btn {
@@ -586,11 +591,11 @@ li {
 
 #notesList li .delete-btn, #taskList li .delete-btn {
   font-size: 12px;
-  background-color: #ff4444;
+  background-color: #ff444400;
   color: white;
   border: none;
   border-radius: 5px;
-  padding: 5px 10px;
+  padding: 1px 1px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
