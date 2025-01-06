@@ -72,15 +72,39 @@
     <p class="disclaimer-text">
   You can also ask Shade AI questions related to your notes and tasks and it'll give you personalized answers.
     </p>
-  </div>
-<script>
+  </div><script>
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
-        .then((registration) => {
+        .then(async (registration) => {
             console.log('Service Worker registered:', registration);
+
+            // Request notification permission
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('Notification permission granted');
+
+                // Check and register periodic sync
+                if ('PeriodicSyncManager' in window) {
+                    const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+                    if (status.state === 'granted') {
+                        try {
+                            await registration.periodicSync.register('daily-task-reminder', {
+                                minInterval: 24 * 60 * 60 * 1000 // One day
+                            });
+                            console.log('Periodic sync registered for daily task reminders.');
+                        } catch (error) {
+                            console.error('Failed to register periodic sync:', error);
+                        }
+                    } else {
+                        console.warn('Periodic Background Sync not supported or permission not granted.');
+                    }
+                } else {
+                    console.warn('Periodic Background Sync API is not supported in this browser.');
+                }
+            }
         })
         .catch((error) => {
-            console.log('Service Worker registration failed:', error);
+            console.error('Service Worker registration failed:', error);
         });
 }
 </script>
