@@ -1,0 +1,21 @@
+{
+    "name": "Shade Book",
+    "short_name": "Shade Book",
+    "start_url": "index.html",
+    "scope": "./",
+    "icons": [
+        {
+            "src": "yuh.jpg",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "yuh.jpg",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#242424",
+    "background_color": "#000000",
+    "display": "standalone"
+}
