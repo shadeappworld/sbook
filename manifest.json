@@ -5,12 +5,12 @@
     "scope": "./",
     "icons": [
         {
-            "src": "yuh.jpg",
+            "src": "InShot_20250106_212603870.jpg",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "yuh.jpg",
+            "src": "InShot_20250106_212603870.jpg",
             "sizes": "512x512",
             "type": "image/png"
         }
