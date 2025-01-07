@@ -2,7 +2,7 @@ const CACHE_NAME = 'shade-book-cache-v2';
 const FILES_TO_CACHE = [
     '/index.html',
     '/style.css',
-    '/manifest.json'
+    '/script.js'
 ];
 
 // Install the service worker and cache files
