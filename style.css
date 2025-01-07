@@ -211,7 +211,7 @@ body.hide-header .header {
   width: 100%;
   border-radius: 0.135rem;
   background-position: -800px 0;
-  background: linear-gradient(to right, #4285f4#3df44a, var(--primary-color), #4285f4);
+  background: linear-gradient(to right, #00e0f4, var(--primary-color), #7ad900);
   animation: loading 3s linear infinite;
 }
 
@@ -351,7 +351,7 @@ body.hide-header .header {
   /* max-width: 600px; */
   /* background-color: #fff; */
   padding: 20px;
-  border-radius: 50px;
+  border-radius: 25px;
   background: var(--secondary-color);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   color: var(--text-color);
