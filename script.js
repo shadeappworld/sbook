@@ -7,6 +7,7 @@ const deleteChatButton = document.querySelector("#delete-chat-button");
 // State variables
 let userMessage = null;
 let isResponseGenerating = false;
+let chatHistory = []; // Store conversation history
 
 // API configuration
 const API_KEY = "AIzaSyDO2YVW5g8XgDEnBCH1LEur7SOCAEr4rYk"; // Your API key here
@@ -14,53 +15,52 @@ const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-
 
 // Load theme and chat data from local storage on page load
 const loadDataFromLocalstorage = () => {
-    const savedChats = localStorage.getItem("saved-chats");
-    const isLightMode = (localStorage.getItem("themeColor") === "light_mode");
+  const savedChats = localStorage.getItem("saved-chats");
+  const isLightMode = localStorage.getItem("themeColor") === "light_mode";
 
-    // Apply the stored theme
-    document.body.classList.toggle("light_mode", isLightMode);
-    toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
+  // Apply the stored theme
+  document.body.classList.toggle("light_mode", isLightMode);
+  toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
 
-    // Restore saved chats or clear the chat container
-    chatContainer.innerHTML = savedChats || '';
-    document.body.classList.toggle("hide-header", !!savedChats);
+  // Restore saved chats or clear the chat container
+  chatContainer.innerHTML = savedChats || "";
+  document.body.classList.toggle("hide-header", !!savedChats);
 
-    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
-}
+  chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
+};
 
 // Create a new message element and return it
 const createMessageElement = (content, ...classes) => {
-    const div = document.createElement("div");
-    div.classList.add("message", ...classes);
-    div.innerHTML = content;
-    return div;
-}
+  const div = document.createElement("div");
+  div.classList.add("message", ...classes);
+  div.innerHTML = content;
+  return div;
+};
 
 // Show typing effect by displaying words one by one
 const showTypingEffect = (text, textElement, incomingMessageDiv) => {
-    const words = text.split(' ');
-    let currentWordIndex = 0;
+  const words = text.split(" ");
+  let currentWordIndex = 0;
 
-    const typingInterval = setInterval(() => {
-        // Append each word to the text element with a space
-        textElement.innerText += (currentWordIndex === 0 ? '' : ' ') + words[currentWordIndex++];
-        incomingMessageDiv.querySelector(".icon").classList.add("hide");
+  const typingInterval = setInterval(() => {
+    // Append each word to the text element with a space
+    textElement.innerText += (currentWordIndex === 0 ? "" : " ") + words[currentWordIndex++];
+    incomingMessageDiv.querySelector(".icon").classList.add("hide");
 
-        // If all words are displayed
-        if (currentWordIndex === words.length) {
-            clearInterval(typingInterval);
-            isResponseGenerating = false;
-            incomingMessageDiv.querySelector(".icon").classList.remove("hide");
-            localStorage.setItem("saved-chats", chatContainer.innerHTML); // Save chats to local storage
-        }
-        chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
-    }, 75);
-}
+    // If all words are displayed
+    if (currentWordIndex === words.length) {
+      clearInterval(typingInterval);
+      isResponseGenerating = false;
+      incomingMessageDiv.querySelector(".icon").classList.remove("hide");
+      localStorage.setItem("saved-chats", chatContainer.innerHTML); // Save chats to local storage
+    }
+    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
+  }, 75);
+};
 
 // Fetch response from the API based on user message
 const generateAPIResponse = async (incomingMessageDiv, aiMessage) => {
     const textElement = incomingMessageDiv.querySelector(".text"); // Getting text element
-
     try {
         // Send a POST request to the API with the user's message and context
         const response = await fetch(API_URL, {
@@ -76,14 +76,28 @@ const generateAPIResponse = async (incomingMessageDiv, aiMessage) => {
 
         const data = await response.json();
         if (!response.ok) throw new Error(data.error.message);
+        
+        // Check if data.candidates and its sub-properties exist
+         if (
+            data.candidates &&
+            data.candidates[0] &&
+            data.candidates[0].content &&
+            data.candidates[0].content.parts &&
+            data.candidates[0].content.parts[0] &&
+            typeof data.candidates[0].content.parts[0].text === 'string'
+            ) {
+                const apiResponse = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '$1');
+                showTypingEffect(apiResponse, textElement, incomingMessageDiv);
+            return apiResponse;
+        } else {
+            return null;
+        }
 
-        // Get the API response text and remove asterisks from it
-        const apiResponse = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '$1');
-        showTypingEffect(apiResponse, textElement, incomingMessageDiv); // Show typing effect
     } catch (error) { // Handle error
         isResponseGenerating = false;
         textElement.innerText = error.message;
         textElement.parentElement.closest(".message").classList.add("error");
+        return null;
     } finally {
         incomingMessageDiv.classList.remove("loading");
     }
@@ -102,113 +116,209 @@ const showLoadingAnimation = () => {
                 </div>
                 <span onClick="copyMessage(this)" class="icon material-symbols-rounded">content_copy</span>`;
 
-    const incomingMessageDiv = createMessageElement(html, "incoming", "loading");
-    chatContainer.appendChild(incomingMessageDiv);
+  const incomingMessageDiv = createMessageElement(html, "incoming", "loading");
+  chatContainer.appendChild(incomingMessageDiv);
 
-    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
-    return incomingMessageDiv; // Return the created element
-}
+  chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
+  return incomingMessageDiv; // Return the created element
+};
 
 // Copy message text to the clipboard
 const copyMessage = (copyButton) => {
-    const messageText = copyButton.parentElement.querySelector(".text").innerText;
+  const messageText = copyButton.parentElement.querySelector(".text").innerText;
 
-    navigator.clipboard.writeText(messageText);
-    copyButton.innerText = "done"; // Show confirmation icon
-    setTimeout(() => copyButton.innerText = "content_copy", 1000); // Revert icon after 1 second
-}
+  navigator.clipboard.writeText(messageText);
+  copyButton.innerText = "done"; // Show confirmation icon
+  setTimeout(() => (copyButton.innerText = "content_copy"), 1000); // Revert icon after 1 second
+};
 
 // Handle sending outgoing chat messages
 const handleOutgoingChat = async () => {
-    userMessage = typingForm.querySelector(".typing-input").value.trim() || userMessage;
-    if(!userMessage || isResponseGenerating) return; // Exit if there is no message or response is generating
+  userMessage = typingForm.querySelector(".typing-input").value.trim() || userMessage;
+  if (!userMessage || isResponseGenerating) return; // Exit if there is no message or response is generating
 
-    isResponseGenerating = true;
+  isResponseGenerating = true;
 
-    const html = `<div class="message-content">
+  const html = `<div class="message-content">
                   <img class="avatar" src="person.png" alt="User avatar">
                   <p class="text"></p>
                 </div>`;
 
-    const outgoingMessageDiv = createMessageElement(html, "outgoing");
-    outgoingMessageDiv.querySelector(".text").innerText = userMessage;
-    chatContainer.appendChild(outgoingMessageDiv);
-    
-    typingForm.reset(); // Clear input field
-    document.body.classList.add("hide-header");
-    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
-    
-    await generateAIResponse(); // Send the message along with notes and tasks context to AI
-}
+  const outgoingMessageDiv = createMessageElement(html, "outgoing");
+  outgoingMessageDiv.querySelector(".text").innerText = userMessage;
+  chatContainer.appendChild(outgoingMessageDiv);
 
-// Get the user's notes and tasks from local storage and create context for AI
-const getAIContext = () => {
-    let notes = JSON.parse(localStorage.getItem('notes')) || [];
-    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-  
-    let taskListString = tasks.map(task => `- ${task.text} (${task.completed ? 'Completed' : 'Pending'})`).join('\n');
-  
-    let contextString = `Here are the user's notes and tasks:
-      
-    Notes: 
-    ${notes.length > 0 ? notes.join('\n') : 'No notes'}
+  typingForm.reset(); // Clear input field
+  document.body.classList.add("hide-header");
+  chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
 
-    Tasks:
-    ${tasks.length > 0 ? taskListString : 'No tasks'}
-
-    If the user asks "what are my notes" or "what are my tasks", you must summarize them. if the user's query is not related to their notes or tasks, answer the question normally but more personalized based on their tasks and notes - be highly empathic, emotional, and the tone should be based on the users notes and tasks.`;
-    return contextString;
+  await generateAIResponse(); // Send the message along with notes and tasks context to AI
 };
 
+// Define a system instruction for the AI
+const getSystemInstruction = () => {
+    return `You are a helpful and conversational AI assistant. Your primary goal is to provide assistance with tasks and information while using a personalized vernacular based on their notes and tasks. Respond in a clear and concise way.
+    You have the ability to create and delete notes and tasks. If the user asks you to create a note, generate a detailed note on that topic and save it. If the user asks you to delete a note, delete it. If the user asks to create a task, create it and save it. Always update the user with the status of their notes and tasks if they ask.`;
+};
+
+// Get the user's notes and tasks from local storage and create context for AI
+const getAIContext = (userMessage) => {
+  let notes = JSON.parse(localStorage.getItem("notes")) || [];
+  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+  let taskListString = tasks
+    .map((task) => `- ${task.text} (${task.completed ? "Completed" : "Pending"})`)
+    .join("\n");
+
+    let contextString = "";
+    if (userMessage.toLowerCase().includes("what are my notes")) {
+      contextString = `
+            Notes: 
+                ${notes.length > 0 ? notes.join("\n") : "No notes"}`;
+                return contextString;
+        } else if (userMessage.toLowerCase().includes("what are my tasks")) {
+            contextString = `
+                Tasks:
+                    ${tasks.length > 0 ? taskListString : "No tasks"}`;
+            return contextString;
+        }else {
+            contextString = `Here are the user's notes and tasks. I will summarize them if you ask me.
+                Notes: ${notes.length > 0 ? notes.join("\n") : "No notes"}
+                Tasks: ${tasks.length > 0 ? taskListString : "No tasks"}`;
+        }
+  return contextString;
+};
+
+// Function to handle note creation
+const handleCreateNote = (noteText, aiMessage) => {
+    let notes = JSON.parse(localStorage.getItem("notes")) || [];
+    notes.push(aiMessage);
+    localStorage.setItem("notes", JSON.stringify(notes));
+    loadNotes(); // Update DOM
+};
+
+// Function to handle note deletion
+const handleDeleteNote = (noteText) => {
+    let notes = JSON.parse(localStorage.getItem('notes')) || [];
+    const index = notes.indexOf(noteText);
+    if (index > -1) {
+        notes.splice(index, 1);
+    }
+    localStorage.setItem('notes', JSON.stringify(notes));
+    loadNotes(); // Update DOM
+}
+
+// Function to handle task creation
+const handleCreateTask = (taskText) => {
+  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  tasks.push({ text: taskText, completed: false });
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+  loadTasks(); // Update DOM
+};
 
 // Send the user's message along with the context to the AI
 const generateAIResponse = async () => {
-  const aiInstruction = getAIContext();  // Getting the context string
-  const aiMessage = `${aiInstruction} ${userMessage}`;  // Combining AI instruction with the user message
+  const systemInstruction = getSystemInstruction();
+  const aiContext = getAIContext(userMessage);
 
-  const incomingMessageDiv = showLoadingAnimation();  // Show the loading animation
-  await generateAPIResponse(incomingMessageDiv, aiMessage);  // Generate the response from the AI
+  // Incorporate conversation history (if needed)
+  const conversationHistory = chatHistory.map((item) => item.content).join("\n");
+
+  const aiMessage = `${systemInstruction}
+    
+    ${aiContext}
+
+    ${conversationHistory}
+    
+    User: ${userMessage}`;
+
+  const incomingMessageDiv = showLoadingAnimation(); // Show the loading animation
+  const apiResponse = await generateAPIResponse(incomingMessageDiv, aiMessage); // Generate the response from the AI
+
+    const lowerCaseMessage = userMessage.toLowerCase();
+
+  // Handle note/task creation or deletion
+    if (lowerCaseMessage.includes("create a note") || lowerCaseMessage.includes("add a note")) {
+        const noteMatch = lowerCaseMessage.match(/(?:create|add) a note (?:on|about)?\s*(?:that )?(.*)/i);
+        if(noteMatch) {
+            const noteText = noteMatch[1].trim();
+            if (apiResponse) {
+                handleCreateNote(noteText, apiResponse);
+            } else {
+                // Handle the case where the API did not return a valid response
+               const noResponse = 'Could not create the note at the moment, please try again';
+               const textElement = incomingMessageDiv.querySelector('.text');
+               showTypingEffect(noResponse, textElement, incomingMessageDiv);
+            }
+         }
+    } else if (lowerCaseMessage.includes("delete a note")) {
+        const noteMatch = lowerCaseMessage.match(/delete a note (?:on|about)?\s*(?:that )?(.*)/i);
+        if(noteMatch){
+            const noteText = noteMatch[1].trim();
+            handleDeleteNote(noteText);
+        }
+    }  else if (lowerCaseMessage.includes("create a task") || lowerCaseMessage.includes("add a task")) {
+        const taskMatch = lowerCaseMessage.match(/(?:create|add) a task (?:to|for)?\s*(?:that )?(.*)/i);
+        if(taskMatch){
+            const taskText = taskMatch[1].trim();
+            handleCreateTask(taskText);
+         }
+    }
+
+   // Update chat history
+  chatHistory.push({ role: "user", content: userMessage });
+    if (apiResponse){
+       chatHistory.push({ role: "assistant", content: apiResponse });
+    }
+
+
+  // Limit the chat history to keep it within a reasonable limit
+  if (chatHistory.length > 10) {
+    chatHistory = chatHistory.slice(-10);
+  }
 };
 
 // Toggle between light and dark themes
 toggleThemeButton.addEventListener("click", () => {
-    const isLightMode = document.body.classList.toggle("light_mode");
-    localStorage.setItem("themeColor", isLightMode ? "light_mode" : "dark_mode");
-    toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
+  const isLightMode = document.body.classList.toggle("light_mode");
+  localStorage.setItem("themeColor", isLightMode ? "light_mode" : "dark_mode");
+  toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
 });
 
 // Delete all chats from local storage when button is clicked
 deleteChatButton.addEventListener("click", () => {
-    if (confirm("Are you sure you want to delete all the chats?")) {
-        localStorage.removeItem("saved-chats");
-        loadDataFromLocalstorage();
-    }
+  if (confirm("Are you sure you want to delete all the chats?")) {
+    localStorage.removeItem("saved-chats");
+    loadDataFromLocalstorage();
+  }
 });
 
 // Set userMessage and handle outgoing chat when a suggestion is clicked
-suggestions.forEach(suggestion => {
-    suggestion.addEventListener("click", () => {
-        userMessage = suggestion.querySelector(".text").innerText;
-        handleOutgoingChat();
-    });
+suggestions.forEach((suggestion) => {
+  suggestion.addEventListener("click", () => {
+    userMessage = suggestion.querySelector(".text").innerText;
+    handleOutgoingChat();
+  });
 });
 
 // Prevent default form submission and handle outgoing chat
 typingForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    handleOutgoingChat();
+  e.preventDefault();
+  handleOutgoingChat();
 });
 
 loadDataFromLocalstorage();
 
 // Notes and tasks management
-let notesList = document.getElementById('notesList');
-let taskList = document.getElementById('taskList');
+let notesList = document.getElementById("notesList");
+let taskList = document.getElementById("taskList");
 
 // Load notes from local storage on page load
 const loadNotes = () => {
-    let notes = JSON.parse(localStorage.getItem('notes')) || [];
-    notesList.innerHTML = notes.map((note, index) => `
+  let notes = JSON.parse(localStorage.getItem("notes")) || [];
+  notesList.innerHTML = notes
+    .map(
+      (note, index) => `
         <li>
             <span>${note}</span>
             <button class="delete-btn" onclick="deleteNote(this.parentElement, ${index})">
@@ -217,130 +327,134 @@ const loadNotes = () => {
                 </svg>
             </button>
         </li>
-    `).join('');
-}
+    `
+    )
+    .join("");
+};
 
 // Load tasks from local storage on page load
 const loadTasks = () => {
-    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    taskList.innerHTML = tasks.map(task => `
+  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  taskList.innerHTML = tasks
+    .map(
+      (task) => `
         <li>
-            <span class="${task.completed ? 'completed' : ''}">${task.text}</span>
-            <button class="task-btn" ${task.completed ? 'disabled' : ''} onclick="markComplete(this.parentElement)">
-                ${task.completed ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16"> <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/> </svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16"> <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/> </svg>'}
+            <span class="${task.completed ? "completed" : ""}">${task.text}</span>
+            <button class="task-btn" ${task.completed ? "disabled" : ""} onclick="markComplete(this.parentElement)">
+                ${
+                  task.completed
+                    ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16"> <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/> </svg>'
+                    : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16"> <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/> </svg>'
+                }
             </button>
         </li>
-    `).join('');
-}
+    `
+    )
+    .join("");
+};
 
 loadNotes();
 loadTasks();
 // Handle the "Create" button click
-const createButton = document.getElementById('createButton');
-const popup = document.getElementById('popup');
-const closeBtn = document.querySelector('.close-btn');
+const createButton = document.getElementById("createButton");
+const popup = document.getElementById("popup");
+const closeBtn = document.querySelector(".close-btn");
 
 // Open the popup
-createButton.addEventListener('click', () => {
-    popup.style.display = 'block';
+createButton.addEventListener("click", () => {
+  popup.style.display = "block";
 });
 
 // Close the popup when the close button is clicked
-closeBtn.addEventListener('click', () => {
-    popup.style.display = 'none';
+closeBtn.addEventListener("click", () => {
+  popup.style.display = "none";
 });
 
 // Close the popup if the user clicks outside of the popup
-window.addEventListener('click', (event) => {
-    if (event.target === popup) {
-        popup.style.display = 'none';
-    }
+window.addEventListener("click", (event) => {
+  if (event.target === popup) {
+    popup.style.display = "none";
+  }
 });
 
 // Add a new note
 function addNote() {
-    let noteInput = document.getElementById('noteInput');
-    if (noteInput.value.trim() !== '') {
-        let li = document.createElement('li');
-        let noteText = document.createElement('span');
-        noteText.textContent = noteInput.value;
+  let noteInput = document.getElementById("noteInput");
+  if (noteInput.value.trim() !== "") {
+    let li = document.createElement("li");
+    let noteText = document.createElement("span");
+    noteText.textContent = noteInput.value;
 
-        // Create the delete button
-        let deleteButton = document.createElement('button');
-        deleteButton.textContent = 'X';
-        deleteButton.classList.add('delete-btn');
-        deleteButton.onclick = () => deleteNote(li);
+    // Create the delete button
+    let deleteButton = document.createElement("button");
+    deleteButton.textContent = "X";
+    deleteButton.classList.add("delete-btn");
+    deleteButton.onclick = () => deleteNote(li);
 
-        // Append the delete button and note text to the list item
-        li.appendChild(noteText);
-        li.appendChild(deleteButton);
+    // Append the delete button and note text to the list item
+    li.appendChild(noteText);
+    li.appendChild(deleteButton);
 
+    // Append the list item to the notes list
+    notesList.appendChild(li);
+    noteInput.value = ""; // Clear the input field
 
-        // Append the list item to the notes list
-        notesList.appendChild(li);
-        noteInput.value = ''; // Clear the input field
-
-        // Save the note to local storage
-        let notes = JSON.parse(localStorage.getItem('notes')) || [];
-        notes.push(noteText.textContent); // Store the text content
-        localStorage.setItem('notes', JSON.stringify(notes));
-    } else {
-        alert('Please enter a note!');
-    }
+    // Save the note to local storage
+    let notes = JSON.parse(localStorage.getItem("notes")) || [];
+    notes.push(noteText.textContent); // Store the text content
+    localStorage.setItem("notes", JSON.stringify(notes));
+  } else {
+    alert("Please enter a note!");
+  }
 }
-
 
 // Delete a specific note
 function deleteNote(noteItem, index) {
-      // Remove the note from local storage
-      let notes = JSON.parse(localStorage.getItem('notes')) || [];
-      notes.splice(index, 1); // Remove the note from the array
-      localStorage.setItem('notes', JSON.stringify(notes));
-  
-      // Remove the note element from the DOM
-      noteItem.remove();
-  }
+  // Remove the note from local storage
+  let notes = JSON.parse(localStorage.getItem("notes")) || [];
+  notes.splice(index, 1); // Remove the note from the array
+  localStorage.setItem("notes", JSON.stringify(notes));
 
+  // Remove the note element from the DOM
+  noteItem.remove();
+}
 
 // Add a new task
 function addTask() {
-    let taskInput = document.getElementById('taskInput');
-    if (taskInput.value.trim() !== '') {
-        let li = document.createElement('li');
-        let taskText = document.createElement('span');
-        taskText.textContent = taskInput.value;
-  
-        let completeButton = document.createElement('button');
-        completeButton.textContent = 'Complete';
-        completeButton.classList.add('task-btn');
-        completeButton.onclick = () => markComplete(li);
-  
-        li.appendChild(taskText);
-        li.appendChild(completeButton);
-        taskList.appendChild(li);
-  
-        // Save task to local storage
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        tasks.push({ text: taskInput.value, completed: false });
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-  
-        taskInput.value = '';
-    } else {
-        alert('Please enter a task!');
-    }
+  let taskInput = document.getElementById("taskInput");
+  if (taskInput.value.trim() !== "") {
+    let li = document.createElement("li");
+    let taskText = document.createElement("span");
+    taskText.textContent = taskInput.value;
+
+    let completeButton = document.createElement("button");
+    completeButton.textContent = "Complete";
+    completeButton.classList.add("task-btn");
+    completeButton.onclick = () => markComplete(li);
+
+    li.appendChild(taskText);
+    li.appendChild(completeButton);
+    taskList.appendChild(li);
+
+    // Save task to local storage
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    tasks.push({ text: taskInput.value, completed: false });
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    taskInput.value = "";
+  } else {
+    alert("Please enter a task!");
   }
-  
-  // Mark task as completed
-  function markComplete(taskItem) {
-    taskItem.querySelector('span').classList.add('completed');
-    taskItem.querySelector('button').disabled = true;
-  
-    // Update task completion status in local storage
-    let tasks = JSON.parse(localStorage.getItem('tasks'));
-    let taskIndex = Array.from(taskList.children).indexOf(taskItem);
-    tasks[taskIndex].completed = true;
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-  }
- 
- 
- 
+}
+
+// Mark task as completed
+function markComplete(taskItem) {
+  taskItem.querySelector("span").classList.add("completed");
+  taskItem.querySelector("button").disabled = true;
+
+  // Update task completion status in local storage
+  let tasks = JSON.parse(localStorage.getItem("tasks"));
+  let taskIndex = Array.from(taskList.children).indexOf(taskItem);
+  tasks[taskIndex].completed = true;
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
