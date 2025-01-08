@@ -156,7 +156,7 @@ const getAIContext = () => {
     Tasks:
     ${tasks.length > 0 ? taskListString : 'No tasks'}
 
-    If the user asks "what are my notes" or "what are my tasks", you must summarize them. if the user's query is not related to their notes or tasks, answer the question normally but more personalized based on their tasks and notes - use vernac.`;
+    If the user asks "what are my notes" or "what are my tasks", you must summarize them. if the user's query is not related to their notes or tasks, answer the question normally but more personalized based on their tasks and notes - be highly empathic, emotional, and the tone should be based on the users notes and tasks.`;
     return contextString;
 };
 
