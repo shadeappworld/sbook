@@ -15,48 +15,49 @@ const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-
 
 // Load theme and chat data from local storage on page load
 const loadDataFromLocalstorage = () => {
-  const savedChats = localStorage.getItem("saved-chats");
-  const isLightMode = localStorage.getItem("themeColor") === "light_mode";
+    const savedChats = localStorage.getItem("saved-chats");
+    const isLightMode = localStorage.getItem("themeColor") === "light_mode";
 
-  // Apply the stored theme
-  document.body.classList.toggle("light_mode", isLightMode);
-  toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
+    // Apply the stored theme
+    document.body.classList.toggle("light_mode", isLightMode);
+    toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
 
-  // Restore saved chats or clear the chat container
-  chatContainer.innerHTML = savedChats || "";
-  document.body.classList.toggle("hide-header", !!savedChats);
+    // Restore saved chats or clear the chat container
+    chatContainer.innerHTML = savedChats || "";
+    document.body.classList.toggle("hide-header", !!savedChats);
 
-  chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
+    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
 };
 
 // Create a new message element and return it
 const createMessageElement = (content, ...classes) => {
-  const div = document.createElement("div");
-  div.classList.add("message", ...classes);
-  div.innerHTML = content;
-  return div;
+    const div = document.createElement("div");
+    div.classList.add("message", ...classes);
+    div.innerHTML = content;
+    return div;
 };
 
 // Show typing effect by displaying words one by one
 const showTypingEffect = (text, textElement, incomingMessageDiv) => {
-  const words = text.split(" ");
-  let currentWordIndex = 0;
+    const words = text.split(" ");
+    let currentWordIndex = 0;
 
-  const typingInterval = setInterval(() => {
-    // Append each word to the text element with a space
-    textElement.innerText += (currentWordIndex === 0 ? "" : " ") + words[currentWordIndex++];
-    incomingMessageDiv.querySelector(".icon").classList.add("hide");
+    const typingInterval = setInterval(() => {
+        // Append each word to the text element with a space
+        textElement.innerText += (currentWordIndex === 0 ? "" : " ") + words[currentWordIndex++];
+        incomingMessageDiv.querySelector(".icon").classList.add("hide");
 
-    // If all words are displayed
-    if (currentWordIndex === words.length) {
-      clearInterval(typingInterval);
-      isResponseGenerating = false;
-      incomingMessageDiv.querySelector(".icon").classList.remove("hide");
-      localStorage.setItem("saved-chats", chatContainer.innerHTML); // Save chats to local storage
-    }
-    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
-  }, 75);
+        // If all words are displayed
+        if (currentWordIndex === words.length) {
+            clearInterval(typingInterval);
+            isResponseGenerating = false;
+            incomingMessageDiv.querySelector(".icon").classList.remove("hide");
+            localStorage.setItem("saved-chats", chatContainer.innerHTML); // Save chats to local storage
+        }
+        chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
+    }, 75);
 };
+
 
 // Fetch response from the API based on user message
 const generateAPIResponse = async (incomingMessageDiv, aiMessage) => {
@@ -76,18 +77,18 @@ const generateAPIResponse = async (incomingMessageDiv, aiMessage) => {
 
         const data = await response.json();
         if (!response.ok) throw new Error(data.error.message);
-        
+
         // Check if data.candidates and its sub-properties exist
-         if (
+        if (
             data.candidates &&
             data.candidates[0] &&
             data.candidates[0].content &&
             data.candidates[0].content.parts &&
             data.candidates[0].content.parts[0] &&
             typeof data.candidates[0].content.parts[0].text === 'string'
-            ) {
-                const apiResponse = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '$1');
-                showTypingEffect(apiResponse, textElement, incomingMessageDiv);
+        ) {
+            const apiResponse = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '$1');
+            showTypingEffect(apiResponse, textElement, incomingMessageDiv);
             return apiResponse;
         } else {
             return null;
@@ -103,9 +104,10 @@ const generateAPIResponse = async (incomingMessageDiv, aiMessage) => {
     }
 }
 
+
 // Show a loading animation while waiting for the API response
 const showLoadingAnimation = () => {
-  const html = `<div class="message-content">
+    const html = `<div class="message-content">
                   <img class="avatar" src="yuh.jpg" alt="NGGYU">
                   <p class="text"></p>
                   <div class="loading-indicator">
@@ -116,43 +118,43 @@ const showLoadingAnimation = () => {
                 </div>
                 <span onClick="copyMessage(this)" class="icon material-symbols-rounded">content_copy</span>`;
 
-  const incomingMessageDiv = createMessageElement(html, "incoming", "loading");
-  chatContainer.appendChild(incomingMessageDiv);
+    const incomingMessageDiv = createMessageElement(html, "incoming", "loading");
+    chatContainer.appendChild(incomingMessageDiv);
 
-  chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
-  return incomingMessageDiv; // Return the created element
+    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
+    return incomingMessageDiv; // Return the created element
 };
 
 // Copy message text to the clipboard
 const copyMessage = (copyButton) => {
-  const messageText = copyButton.parentElement.querySelector(".text").innerText;
+    const messageText = copyButton.parentElement.querySelector(".text").innerText;
 
-  navigator.clipboard.writeText(messageText);
-  copyButton.innerText = "done"; // Show confirmation icon
-  setTimeout(() => (copyButton.innerText = "content_copy"), 1000); // Revert icon after 1 second
+    navigator.clipboard.writeText(messageText);
+    copyButton.innerText = "done"; // Show confirmation icon
+    setTimeout(() => (copyButton.innerText = "content_copy"), 1000); // Revert icon after 1 second
 };
 
 // Handle sending outgoing chat messages
 const handleOutgoingChat = async () => {
-  userMessage = typingForm.querySelector(".typing-input").value.trim() || userMessage;
-  if (!userMessage || isResponseGenerating) return; // Exit if there is no message or response is generating
+    userMessage = typingForm.querySelector(".typing-input").value.trim() || userMessage;
+    if (!userMessage || isResponseGenerating) return; // Exit if there is no message or response is generating
 
-  isResponseGenerating = true;
+    isResponseGenerating = true;
 
-  const html = `<div class="message-content">
+    const html = `<div class="message-content">
                   <img class="avatar" src="person.png" alt="User avatar">
                   <p class="text"></p>
                 </div>`;
 
-  const outgoingMessageDiv = createMessageElement(html, "outgoing");
-  outgoingMessageDiv.querySelector(".text").innerText = userMessage;
-  chatContainer.appendChild(outgoingMessageDiv);
+    const outgoingMessageDiv = createMessageElement(html, "outgoing");
+    outgoingMessageDiv.querySelector(".text").innerText = userMessage;
+    chatContainer.appendChild(outgoingMessageDiv);
 
-  typingForm.reset(); // Clear input field
-  document.body.classList.add("hide-header");
-  chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
+    typingForm.reset(); // Clear input field
+    document.body.classList.add("hide-header");
+    chatContainer.scrollTo(0, chatContainer.scrollHeight); // Scroll to the bottom
 
-  await generateAIResponse(); // Send the message along with notes and tasks context to AI
+    await generateAIResponseWithNoteTaskHandling();
 };
 
 // Define a system instruction for the AI
@@ -163,68 +165,78 @@ const getSystemInstruction = () => {
 
 // Get the user's notes and tasks from local storage and create context for AI
 const getAIContext = (userMessage) => {
-  let notes = JSON.parse(localStorage.getItem("notes")) || [];
-  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    let notes = JSON.parse(localStorage.getItem("notes")) || [];
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-  let taskListString = tasks
-    .map((task) => `- ${task.text} (${task.completed ? "Completed" : "Pending"})`)
-    .join("\n");
+    let taskListString = tasks
+        .map((task) => `- ${task.text} (${task.completed ? "Completed" : "Pending"})`)
+        .join("\n");
 
-    let contextString = "";
-    if (userMessage.toLowerCase().includes("what are my notes")) {
-      contextString = `
-            Notes: 
-                ${notes.length > 0 ? notes.join("\n") : "No notes"}`;
-                return contextString;
-        } else if (userMessage.toLowerCase().includes("what are my tasks")) {
-            contextString = `
-                Tasks:
-                    ${tasks.length > 0 ? taskListString : "No tasks"}`;
-            return contextString;
-        }else {
-            contextString = `Here are the user's notes and tasks. I will summarize them if you ask me.
+    let contextString = `Here are the user's notes and tasks. I will summarize them if you ask me.
                 Notes: ${notes.length > 0 ? notes.join("\n") : "No notes"}
                 Tasks: ${tasks.length > 0 ? taskListString : "No tasks"}`;
-        }
-  return contextString;
+
+    if (userMessage.toLowerCase().includes("what are my notes")) {
+        contextString = `Notes:
+                ${notes.length > 0 ? notes.join("\n") : "No notes"}`;
+                return contextString;
+    } else if (userMessage.toLowerCase().includes("what are my tasks")) {
+        contextString = `
+                Tasks:
+                    ${tasks.length > 0 ? taskListString : "No tasks"}`;
+        return contextString;
+    }
+
+    return contextString;
 };
 
 // Function to handle note creation
-const handleCreateNote = (noteText, aiMessage) => {
+const handleCreateNote = (noteText, aiResponse, incomingMessageDiv) => {
     let notes = JSON.parse(localStorage.getItem("notes")) || [];
-    notes.push(aiMessage);
+    notes.push(aiResponse);
     localStorage.setItem("notes", JSON.stringify(notes));
     loadNotes(); // Update DOM
+    const textElement = incomingMessageDiv.querySelector('.text');
+    showTypingEffect("Note Created Successfully", textElement, incomingMessageDiv);
 };
 
+
 // Function to handle note deletion
-const handleDeleteNote = (noteText) => {
+const handleDeleteNote = (noteText, incomingMessageDiv) => {
     let notes = JSON.parse(localStorage.getItem('notes')) || [];
-    const index = notes.indexOf(noteText);
+    const index = notes.findIndex(note => note.toLowerCase().includes(noteText.toLowerCase()));
     if (index > -1) {
         notes.splice(index, 1);
+        localStorage.setItem('notes', JSON.stringify(notes));
+        loadNotes(); // Update DOM
+        const textElement = incomingMessageDiv.querySelector('.text');
+        showTypingEffect("Note Deleted Successfully", textElement, incomingMessageDiv)
+    } else {
+        const textElement = incomingMessageDiv.querySelector('.text');
+        showTypingEffect("Note not found", textElement, incomingMessageDiv);
     }
-    localStorage.setItem('notes', JSON.stringify(notes));
-    loadNotes(); // Update DOM
 }
 
 // Function to handle task creation
-const handleCreateTask = (taskText) => {
-  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  tasks.push({ text: taskText, completed: false });
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-  loadTasks(); // Update DOM
+const handleCreateTask = (taskText, incomingMessageDiv) => {
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    tasks.push({ text: taskText, completed: false });
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    loadTasks(); // Update DOM
+    const textElement = incomingMessageDiv.querySelector('.text');
+    showTypingEffect("Task Created Successfully", textElement, incomingMessageDiv);
 };
 
 // Send the user's message along with the context to the AI
-const generateAIResponse = async () => {
-  const systemInstruction = getSystemInstruction();
-  const aiContext = getAIContext(userMessage);
+const generateAIResponseWithNoteTaskHandling = async () => {
+    const systemInstruction = getSystemInstruction();
+    const aiContext = getAIContext(userMessage);
+    const incomingMessageDiv = showLoadingAnimation(); // Show the loading animation
 
-  // Incorporate conversation history (if needed)
-  const conversationHistory = chatHistory.map((item) => item.content).join("\n");
+    // Incorporate conversation history (if needed)
+    const conversationHistory = chatHistory.map((item) => item.content).join("\n");
 
-  const aiMessage = `${systemInstruction}
+    const aiMessage = `${systemInstruction}
     
     ${aiContext}
 
@@ -232,79 +244,77 @@ const generateAIResponse = async () => {
     
     User: ${userMessage}`;
 
-  const incomingMessageDiv = showLoadingAnimation(); // Show the loading animation
-  const apiResponse = await generateAPIResponse(incomingMessageDiv, aiMessage); // Generate the response from the AI
 
-    const lowerCaseMessage = userMessage.toLowerCase();
+    const apiResponse = await generateAPIResponse(incomingMessageDiv, aiMessage); // Generate the response from the AI
 
-  // Handle note/task creation or deletion
+     const lowerCaseMessage = userMessage.toLowerCase();
+
+    // Handle note/task creation or deletion
     if (lowerCaseMessage.includes("create a note") || lowerCaseMessage.includes("add a note")) {
-        const noteMatch = lowerCaseMessage.match(/(?:create|add) a note (?:on|about)?\s*(?:that )?(.*)/i);
+         const noteMatch = lowerCaseMessage.match(/(?:create|add) a note (?:on|about|with)?\s*(?:that )?(.*)/i);
         if(noteMatch) {
             const noteText = noteMatch[1].trim();
-            if (apiResponse) {
-                handleCreateNote(noteText, apiResponse);
-            } else {
-                // Handle the case where the API did not return a valid response
-               const noResponse = 'Could not create the note at the moment, please try again';
-               const textElement = incomingMessageDiv.querySelector('.text');
-               showTypingEffect(noResponse, textElement, incomingMessageDiv);
-            }
+             if (apiResponse) {
+                handleCreateNote(noteText, apiResponse, incomingMessageDiv);
+             } else {
+                 const noResponse = 'Could not create the note at the moment, please try again';
+                 const textElement = incomingMessageDiv.querySelector('.text');
+                 showTypingEffect(noResponse, textElement, incomingMessageDiv);
+             }
          }
     } else if (lowerCaseMessage.includes("delete a note")) {
-        const noteMatch = lowerCaseMessage.match(/delete a note (?:on|about)?\s*(?:that )?(.*)/i);
+        const noteMatch = lowerCaseMessage.match(/delete a note (?:on|about|with)?\s*(?:that )?(.*)/i);
         if(noteMatch){
             const noteText = noteMatch[1].trim();
-            handleDeleteNote(noteText);
+            handleDeleteNote(noteText, incomingMessageDiv);
         }
     }  else if (lowerCaseMessage.includes("create a task") || lowerCaseMessage.includes("add a task")) {
         const taskMatch = lowerCaseMessage.match(/(?:create|add) a task (?:to|for)?\s*(?:that )?(.*)/i);
         if(taskMatch){
             const taskText = taskMatch[1].trim();
-            handleCreateTask(taskText);
-         }
+            handleCreateTask(taskText, incomingMessageDiv);
+        }
     }
-
-   // Update chat history
-  chatHistory.push({ role: "user", content: userMessage });
+     // Update chat history
+    chatHistory.push({ role: "user", content: userMessage });
     if (apiResponse){
-       chatHistory.push({ role: "assistant", content: apiResponse });
+        chatHistory.push({ role: "assistant", content: apiResponse });
     }
 
-
-  // Limit the chat history to keep it within a reasonable limit
-  if (chatHistory.length > 10) {
-    chatHistory = chatHistory.slice(-10);
-  }
+    // Limit the chat history to keep it within a reasonable limit
+    if (chatHistory.length > 10) {
+        chatHistory = chatHistory.slice(-10);
+    }
 };
+
 
 // Toggle between light and dark themes
 toggleThemeButton.addEventListener("click", () => {
-  const isLightMode = document.body.classList.toggle("light_mode");
-  localStorage.setItem("themeColor", isLightMode ? "light_mode" : "dark_mode");
-  toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
+    const isLightMode = document.body.classList.toggle("light_mode");
+    localStorage.setItem("themeColor", isLightMode ? "light_mode" : "dark_mode");
+    toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
 });
 
 // Delete all chats from local storage when button is clicked
 deleteChatButton.addEventListener("click", () => {
-  if (confirm("Are you sure you want to delete all the chats?")) {
-    localStorage.removeItem("saved-chats");
-    loadDataFromLocalstorage();
-  }
+    if (confirm("Are you sure you want to delete all the chats?")) {
+        localStorage.removeItem("saved-chats");
+        loadDataFromLocalstorage();
+    }
 });
 
 // Set userMessage and handle outgoing chat when a suggestion is clicked
 suggestions.forEach((suggestion) => {
-  suggestion.addEventListener("click", () => {
-    userMessage = suggestion.querySelector(".text").innerText;
-    handleOutgoingChat();
-  });
+    suggestion.addEventListener("click", () => {
+        userMessage = suggestion.querySelector(".text").innerText;
+        handleOutgoingChat();
+    });
 });
 
 // Prevent default form submission and handle outgoing chat
 typingForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  handleOutgoingChat();
+    e.preventDefault();
+    handleOutgoingChat();
 });
 
 loadDataFromLocalstorage();
@@ -352,6 +362,7 @@ const loadTasks = () => {
     )
     .join("");
 };
+
 
 loadNotes();
 loadTasks();
@@ -422,12 +433,12 @@ function addTask() {
     alert("Please enter a task!");
   }
 }
+
 function updateNote(span, index) {
     let notes = JSON.parse(localStorage.getItem('notes')) || [];
     notes[index] = span.innerHTML.replace(/<br>/g, '\n');
     localStorage.setItem('notes', JSON.stringify(notes));
 }
-
 
 // Mark task as completed
 function markComplete(taskItem) {
