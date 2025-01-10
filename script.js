@@ -157,7 +157,7 @@ const handleOutgoingChat = async () => {
 
 // Define a system instruction for the AI
 const getSystemInstruction = () => {
-    return `You are a helpful and conversational AI assistant. Your primary goal is to provide assistance with tasks and information while using a personalized empathic tone making the user feel hopeful based on their notes and tasks. Respond in a clear and concise way.
+    return `You are a helpful and conversational AI assistant. Your primary goal is to provide assistance with tasks and information while using a personalized vernacular based on their notes and tasks. Respond in a clear and concise way.
     You have the ability to create and delete notes and tasks. If the user asks you to create a note, generate a detailed note on that topic and save it. If the user asks you to delete a note, delete it. If the user asks to create a task, create it and save it. Always update the user with the status of their notes and tasks if they ask.`;
 };
 
@@ -319,9 +319,9 @@ const loadNotes = () => {
   notesList.innerHTML = notes
     .map(
       (note, index) => `
-        <li>
-            <span>${note}</span>
-            <button class="delete-btn" onclick="deleteNote(this.parentElement, ${index})">
+        <li data-index="${index}">
+            <span class="note-text" contenteditable="true" onblur="updateNote(this, ${index})">${note.replace(/\n/g, '<br>')}</span>
+            <button class="delete-btn" onclick="deleteNote(this.parentElement)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                 <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                 </svg>
@@ -337,8 +337,8 @@ const loadTasks = () => {
   let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
   taskList.innerHTML = tasks
     .map(
-      (task) => `
-        <li>
+      (task, index) => `
+        <li data-index="${index}">
             <span class="${task.completed ? "completed" : ""}">${task.text}</span>
             <button class="task-btn" ${task.completed ? "disabled" : ""} onclick="markComplete(this.parentElement)">
                 ${
@@ -381,35 +381,22 @@ window.addEventListener("click", (event) => {
 function addNote() {
   let noteInput = document.getElementById("noteInput");
   if (noteInput.value.trim() !== "") {
-    let li = document.createElement("li");
-    let noteText = document.createElement("span");
-    noteText.textContent = noteInput.value;
-
-    // Create the delete button
-    let deleteButton = document.createElement("button");
-    deleteButton.textContent = "X";
-    deleteButton.classList.add("delete-btn");
-    deleteButton.onclick = () => deleteNote(li);
-
-    // Append the delete button and note text to the list item
-    li.appendChild(noteText);
-    li.appendChild(deleteButton);
-
-    // Append the list item to the notes list
-    notesList.appendChild(li);
-    noteInput.value = ""; // Clear the input field
-
-    // Save the note to local storage
-    let notes = JSON.parse(localStorage.getItem("notes")) || [];
-    notes.push(noteText.textContent); // Store the text content
+      let notes = JSON.parse(localStorage.getItem("notes")) || [];
+      const noteText = noteInput.value.trim();
+    notes.push(noteText);
     localStorage.setItem("notes", JSON.stringify(notes));
+    loadNotes()
+    noteInput.value = ""; // Clear the input field
+    popup.style.display = "none"; // Hide the popup
+
   } else {
     alert("Please enter a note!");
   }
 }
 
 // Delete a specific note
-function deleteNote(noteItem, index) {
+function deleteNote(noteItem) {
+    const index = noteItem.getAttribute('data-index');
   // Remove the note from local storage
   let notes = JSON.parse(localStorage.getItem("notes")) || [];
   notes.splice(index, 1); // Remove the note from the array
@@ -417,44 +404,38 @@ function deleteNote(noteItem, index) {
 
   // Remove the note element from the DOM
   noteItem.remove();
+  loadNotes()
 }
 
 // Add a new task
 function addTask() {
   let taskInput = document.getElementById("taskInput");
   if (taskInput.value.trim() !== "") {
-    let li = document.createElement("li");
-    let taskText = document.createElement("span");
-    taskText.textContent = taskInput.value;
-
-    let completeButton = document.createElement("button");
-    completeButton.textContent = "Complete";
-    completeButton.classList.add("task-btn");
-    completeButton.onclick = () => markComplete(li);
-
-    li.appendChild(taskText);
-    li.appendChild(completeButton);
-    taskList.appendChild(li);
-
-    // Save task to local storage
     let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
     tasks.push({ text: taskInput.value, completed: false });
     localStorage.setItem("tasks", JSON.stringify(tasks));
-
+      loadTasks()
     taskInput.value = "";
+      popup.style.display = "none"; // Hide the popup
+
   } else {
     alert("Please enter a task!");
   }
 }
+function updateNote(span, index) {
+    let notes = JSON.parse(localStorage.getItem('notes')) || [];
+    notes[index] = span.innerHTML.replace(/<br>/g, '\n');
+    localStorage.setItem('notes', JSON.stringify(notes));
+}
+
 
 // Mark task as completed
 function markComplete(taskItem) {
-  taskItem.querySelector("span").classList.add("completed");
-  taskItem.querySelector("button").disabled = true;
-
-  // Update task completion status in local storage
-  let tasks = JSON.parse(localStorage.getItem("tasks"));
-  let taskIndex = Array.from(taskList.children).indexOf(taskItem);
-  tasks[taskIndex].completed = true;
-  localStorage.setItem("tasks", JSON.stringify(tasks));
+    const index = taskItem.getAttribute('data-index');
+    // Update task completion status in local storage
+    let tasks = JSON.parse(localStorage.getItem("tasks"));
+    tasks.splice(index, 1); //Remove from the array
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    taskItem.remove()
+    loadTasks()
 }
