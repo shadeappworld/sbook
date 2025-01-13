@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shade-book-cache-v11';
+const CACHE_NAME = 'shade-book-cache-v12';
 const FILES_TO_CACHE = [
     '/index.html',
     '/style.css',
