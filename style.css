@@ -579,8 +579,21 @@ li {
   color: var(--secondary-hover-color);
   color: var(--text-color);
   transition: background 0.2s ease;
+   word-wrap: break-word; /* Enable wrapping */
+   overflow-x: auto;    /* Allow horizontal scroll */
+  /* height: auto;  */    /* Adjust height automatically */
+    max-height: 400px;     /* Limit height to trigger scroll */
+    
+}
+#notesList li::-webkit-scrollbar, #taskList li::-webkit-scrollbar{
+    width: 3px;
+    
+    background-color: var(--secondary-hover-color);
 }
 
+#notesList li::-webkit-scrollbar-thumb, #taskList li::-webkit-scrollbar-thumb{
+    background-color: gray;
+}
 #notesList li:hover, #taskList li:hover {
   background: var(--secondary-hover-color);
 }
